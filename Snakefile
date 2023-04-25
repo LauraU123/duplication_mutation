@@ -26,7 +26,6 @@ rule branch_from_root:
         --output {output.reconstructed_seq} 
         """
 
-
 rule align_to_ref:
     input:
         reconstructed_seq = rules.branch_from_root.output.reconstructed_seq,
@@ -40,7 +39,6 @@ rule align_to_ref:
         --output-fasta {output.aligned} \
           {input.reconstructed_seq}
         """
-
 
 rule just_duplication:
     input:
@@ -91,4 +89,14 @@ rule reconstruct:
         --input-alignment {input.aligned_seq}
         """
 
-rule graph:
+rule find_unknowns:
+    input:
+        reconstructed_fasta =rules.reconstruct.output.reconstructed_fasta
+    output:
+        reconstructed_fasta = "results/{a_or_b}/last_reconstruction.fasta"
+    shell:
+        """
+        python3 remove_x.py \
+        --input {input.reconstructed_fasta} \
+        --output {output.reconstructed_fasta}
+        """
