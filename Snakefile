@@ -5,7 +5,7 @@ A_OR_B = ["a"]
 
 rule all:
     input:
-        expand("results/{a_or_b}/graphs/cumulativesum_syn.png", a_or_b=A_OR_B)
+        expand("results/{a_or_b}/last_reconstruction.fasta", a_or_b=A_OR_B)
 
 rule branch_from_root:
     input:
@@ -90,13 +90,15 @@ rule reconstruct:
 
 rule find_unknowns:
     input:
-        reconstructed_fasta =rules.reconstruct.output.reconstructed_fasta
+        reconstructed_fasta =rules.reconstruct.output.reconstructed_fasta, 
+        tree_ = rules.branch_from_root.input.tree
     output:
         reconstructed_fasta = "results/{a_or_b}/last_reconstruction.fasta"
     shell:
         """
-        python3 remove_x.py \
+        python3 scripts/remove_x.py \
         --input {input.reconstructed_fasta} \
+        --tree {input.tree_} \
         --output {output.reconstructed_fasta}
         """
 
