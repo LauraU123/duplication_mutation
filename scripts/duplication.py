@@ -15,6 +15,6 @@ if __name__=="__main__":
     alignment_to_cut = SeqIO.parse(args.input, "fasta")
     cut_ids = []
     for entry in alignment_to_cut:
-        new_entry = SeqRecord.SeqRecord(Seq.Seq(entry.seq[args.start:args.end]), id=entry.id, description=entry.description)
+        new_entry = SeqRecord.SeqRecord(Seq.Seq(entry.seq[int(args.start):int(args.end)]), id=entry.id, description=entry.description)
         cut_ids.append(new_entry)
     SeqIO.write(cut_ids, args.output,"fasta")

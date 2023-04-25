@@ -1,11 +1,11 @@
 #this workflow reconstructs the mutations in the RSV A and RSV B duplicated regions of the G gene
 #graphs = expand("{a_or_b}/cumulative_sum_synonymous.png", "{a_or_b}/cumulative_sum_nonsynonymous.png", a_or_b=A_OR_B)
-
+configfile: "config/configfile.yaml"
 A_OR_B = ["a", "b"]
 
 rule all:
     input:
-        expand("results/{a_or_b}/pairwise_G.fasta", a_or_b=A_OR_B)
+        expand("results/{a_or_b}/only_duplication.fasta", a_or_b=A_OR_B)
 
 rule branch_from_root:
     input:
@@ -42,10 +42,10 @@ rule align_to_ref:
 
 rule just_duplication:
     input:
-        reconstructed_seq = rules.align_to_ref.aligned
+        reconstructed_seq = rules.align_to_ref.output.aligned
     params:
-        start = config["just_dupl"]["start"][{a_or_b}],
-        end = config["just_dupl"]["end"][{a_or_b}]
+        start = lambda w: config["just_dupl"]["start"].get(w.a_or_b),
+        end = lambda w: config["just_dupl"]["end"].get(w.a_or_b)
     output:
         only_dupl = "results/{a_or_b}/only_duplication.fasta"
     shell:
@@ -68,5 +68,4 @@ rule align_G:
         --sequences {input.only_dupl} \
         --reference-sequence {input.reference} \
         --output {output.aligned_dupl}
-        
         """
