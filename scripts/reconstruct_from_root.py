@@ -1,4 +1,4 @@
-import json
+import json, argparse
 from Bio import SeqIO, Phylo, SeqRecord
 from Bio.Seq import Seq
 
@@ -28,44 +28,50 @@ def new_recursive(node, list_=None, dictionary_=None):
     return(dictionary_)
 
 
+if __name__=="__main__":
+    parser = argparse.ArgumentParser(
+        description="reconstruct branches from root",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('--input_root', type=str, required=True, help="input root sequence")
+    parser.add_argument('--input_tree_json', type=str, required=True, help="input tree json")
+    parser.add_argument('--sequences', type=str, required=True, help="input sequences from tree fasta")
+    parser.add_argument('--tree', type=str, required=True, help="input newick tree")
+    parser.add_argument('--output', type=str, required=True, help="output fasta")
+    args = parser.parse_args()
 
 
+    sequences_ = SeqIO.parse(args.sequences, "fasta")
+    seq_dict_ = {rec.id : rec.seq for rec in sequences_}
+    tree = Phylo.read(args.tree, "newick")
+    tree.root_at_midpoint()
+    tree.find_clades()
 
-with open ('/home/laura/code/without_G/auspice/rsv_a_genome.json') as file_a:
-    f_a = json.load(file_a)  
-dictionary_mutations = new_recursive(f_a['tree'])
-
-sequences_ = SeqIO.parse("/home/laura/code/without_G/data/a/sequences.fasta", "fasta")
-seq_dict_ = {rec.id : rec.seq for rec in sequences_}
-tree = Phylo.read("/home/laura/code/without_G/results/a/genome/tree.nwk", "newick")
-tree.root_at_midpoint()
-tree.find_clades()
-
-with open ('/home/laura/code/without_G/auspice/rsv_a_genome.json') as file_a:
-    f_a = json.load(file_a)  
-    
-with open('/home/laura/code/without_G/auspice/rsv_a_genome_root-sequence.json') as root_a:
-    r_a = json.load(root_a)
-    root_sequence = list(r_a['nuc'])
-
-dictionary_mutations = new_recursive(f_a['tree'])
-all_sequences= dict()
-all_entries = []
-
-for branch in tree.get_nonterminals(order='postorder'):
-    for b in branch:
+    with open (args.input_tree_json) as file_a:
+        f_a = json.load(file_a)  
+        
+    with open(args.input_root) as root_a:
+        r_a = json.load(root_a)
         root_sequence = list(r_a['nuc'])
-        mutations = dictionary_mutations[b.name]
-        for mut in mutations:
-            root_sequence[int(mut[1:-1])-1] = mut[-1]
 
-        all_sequences[b.name] = "".join(root_sequence) 
+    dictionary_mutations = new_recursive(f_a['tree'])
+    all_sequences= dict()
+    all_entries = []
 
-for id_, sequence in all_sequences.items():
-    if id_ in seq_dict_:
-        entry = SeqRecord(Seq(seq_dict_[id_]), id=id_)
-    else:
-        entry = SeqRecord(Seq(all_sequences[id_]), id=id_)
-    all_entries.append(entry)
+    for branch in tree.get_nonterminals(order='postorder'):
+        for b in branch:
+            root_sequence = list(r_a['nuc'])
+            mutations = dictionary_mutations[b.name]
+            for mut in mutations:
+                root_sequence[int(mut[1:-1])-1] = mut[-1]
 
-SeqIO.write(all_entries, "allbranches_and_seq_a.fasta", "fasta")
+            all_sequences[b.name] = "".join(root_sequence) 
+
+    for id_, sequence in all_sequences.items():
+        if id_ in seq_dict_:
+            entry = SeqRecord(Seq(seq_dict_[id_]), id=id_)
+        else:
+            entry = SeqRecord(Seq(all_sequences[id_]), id=id_)
+        all_entries.append(entry)
+
+    SeqIO.write(all_entries, args.output, "fasta")
