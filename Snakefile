@@ -5,7 +5,7 @@ A_OR_B = ["a", "b"]
 
 rule all:
     input:
-        expand("results/{a_or_b}/reconstructed_sequences.fasta", a_or_b=A_OR_B)
+        expand("results/{a_or_b}/pairwise_G.fasta", a_or_b=A_OR_B)
 
 rule branch_from_root:
     input:
@@ -25,6 +25,7 @@ rule branch_from_root:
         --output {output.reconstructed_seq} 
         """
 
+
 rule align_to_ref:
     input:
         reconstructed_seq = rules.branch_from_root.output.reconstructed_seq,
@@ -33,9 +34,25 @@ rule align_to_ref:
         aligned = "results/{a_or_b}/pairwise_G.fasta"
     shell:
         """
-        nextalign run -j 4 
-        --reference input.{reference}
+        nextalign run -j 4 \
+        --reference {input.reference} \
         --output-fasta {output.aligned} \
           {input.reconstructed_seq}
+        """
 
+rule just_duplication:
+    input:
+        reconstructed_seq = rules.align_to_ref.aligned
+    params:
+        start = config["just_dupl"]["start"][{a_or_b}],
+        end = config["just_dupl"]["end"][{a_or_b}]
+    output:
+        only_dupl = "results/{a_or_b}/only_duplication.fasta"
+    shell:
+        """
+        python3 scripts/duplication.py \
+        --input {input.reconstructed_seq} \
+        --start {params.start} \
+        --end {params.end} \
+        --output {output.only_dupl}
         """
