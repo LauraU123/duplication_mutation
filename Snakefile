@@ -1,12 +1,11 @@
 #this workflow reconstructs the mutations in the RSV A and RSV B duplicated regions of the G gene
-#graphs = expand("{a_or_b}/cumulative_sum_synonymous.png", "{a_or_b}/cumulative_sum_nonsynonymous.png", a_or_b=A_OR_B)
+
 configfile: "config/configfile.yaml"
 A_OR_B = ["a"]
 
-
 rule all:
     input:
-        expand("results/{a_or_b}/reconstructed.fasta", a_or_b=A_OR_B)
+        expand("results/{a_or_b}/graphs/cumulativesum_syn.png", a_or_b=A_OR_B)
 
 rule branch_from_root:
     input:
@@ -99,4 +98,16 @@ rule find_unknowns:
         python3 remove_x.py \
         --input {input.reconstructed_fasta} \
         --output {output.reconstructed_fasta}
+        """
+
+rule graphs:
+    input:
+        data = rules.find_unknowns.output.reconstructed_fasta
+    output:
+        graph_cumsum_syn = "results/{a_or_b}/graphs/cumulativesum_syn.png",
+        graph_cumsum_nonsyn = "results/{a_or_b}/graphs/cumulativesum_nonsyn.png"
+    shell:
+        """
+        python3 scripts/graphs.py
+        --input {input.data}
         """

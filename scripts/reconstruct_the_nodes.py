@@ -17,13 +17,13 @@ def reconstruct_insertions_(fasta, tree, output):
     for branch in tree_.get_nonterminals(order='postorder'):
         if pd.isna(branch.name) == False:
             print(branch)
-            if '-'*72 in seq_dict[branch.name]:
-                substring = '-'*72
+            if '-'*int(int(args.length)/2) in seq_dict[branch.name]:
+                substring = '-'*int(int(args.length)/2)
                 location = (seq_dict[branch.name].find(substring))
                 all_branch_seq = [] 
                 for b in branch:
                     if '-' not in seq_dict[b.name]:
-                        all_branch_seq.append(str(seq_dict[b.name][location:location+72]))
+                        all_branch_seq.append(str(seq_dict[b.name][location:location+int(int(args.length)/2)]))
 
             if len(all_branch_seq) >= 3:
                 common_str = ""
@@ -63,7 +63,6 @@ def reconstruct_insertions_(fasta, tree, output):
     for i, j in seq_dict.items():
         entry = SeqRecord.SeqRecord(Seq.Seq(j), id=i)
         new_file.append(entry)
-    print(new_file)
     SeqIO.write(new_file, output, "fasta")
     return(mut_dict)
 
