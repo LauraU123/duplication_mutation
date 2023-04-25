@@ -11,19 +11,21 @@ rule branch_from_root:
         root = ""
         sequences = ""
         tree = ""
+        tree_json = ""
     output:
         reconstructed_seq = "{a_or_b}_reconstructed_sequences.fasta"
     shell:
         """
         python3 scripts/reconstruct_from_root.py
         --input_root {input.root} \
+        --input_tree_json {input.tree_json}
         --sequences {input.sequences} \
         --tree {input.tree} \
         --output {output.reconstructed_seq} \
 
         """
 
-rule align_to_bla:
+rule align_to_ref:
     input:
         reconstructed_seq = rules.branch_from_root.output.reconstructed_seq
         reference = "config/{a_or_b}reference.fasta"
@@ -32,6 +34,7 @@ rule align_to_bla:
     shell:
         """
         augur align
+
 
         
         """
