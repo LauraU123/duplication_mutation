@@ -56,3 +56,17 @@ rule just_duplication:
         --end {params.end} \
         --output {output.only_dupl}
         """
+
+rule align_G:
+    input:
+        only_dupl = rules.just_duplication.output.only_dupl
+    output:
+        aligned_dupl = "results/{a_or_b}/aligned_duplication.fasta"
+    shell:
+        """
+        augur align --nthreads 4 \
+        --sequences {input.only_dupl} \
+        --reference-sequence {input.reference} \
+        --output {output.aligned_dupl}
+        
+        """
