@@ -40,7 +40,6 @@ if __name__=="__main__":
     parser.add_argument('--output', type=str, required=True, help="output fasta")
     args = parser.parse_args()
 
-
     sequences_ = SeqIO.parse(args.sequences, "fasta")
     seq_dict_ = {rec.id : rec.seq for rec in sequences_}
     tree = Phylo.read(args.tree, "newick")
