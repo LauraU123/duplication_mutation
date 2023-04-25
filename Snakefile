@@ -109,10 +109,13 @@ rule graphs:
     output:
         graph_cumsum_syn = "results/{a_or_b}/graphs/cumulativesum_syn.png",
         graph_cumsum_nonsyn = "results/{a_or_b}/graphs/cumulativesum_nonsyn.png"
+    params:
+        length = lamda w: config["graphs"]["length"].get(w.a_or_b)
     shell:
         """
         python3 scripts/graphs.py \
         --input {input.data} \
         --tree {input.tree_} \
+        --length {params.length} \
         --output {output.graph_cumsum_syn}
         """

@@ -11,3 +11,6 @@ reconstruct:
   a: 144
   b: 120
   
+graphs:
+  a: 72
+  b: 60
