@@ -6,3 +6,7 @@ just_dupl:
   end:
     a: 5609
     b: 5542
+
+reconstruct:
+  a: 144
+  b: 120
