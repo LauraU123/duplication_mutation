@@ -1,6 +1,6 @@
 import json, argparse
-from Bio import SeqIO, Phylo, SeqRecord
-from Bio.Seq import Seq
+from Bio import SeqIO, Phylo, SeqRecord, Seq
+
 
 
 def new_recursive(node, list_=None, dictionary_=None):
@@ -31,18 +31,18 @@ def new_recursive(node, list_=None, dictionary_=None):
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
         description="reconstruct branches from root",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument('--input_root', type=str, required=True, help="input root sequence")
-    parser.add_argument('--input_tree_json', type=str, required=True, help="input tree json")
-    parser.add_argument('--sequences', type=str, required=True, help="input sequences from tree fasta")
-    parser.add_argument('--tree', type=str, required=True, help="input newick tree")
-    parser.add_argument('--output', type=str, required=True, help="output fasta")
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    
+    parser.add_argument('--input-root', required=True, type=str, help="input root sequence")
+    parser.add_argument('--input-tree-json', type=str, help="input tree json")
+    parser.add_argument('--sequences', type=str,  help="input sequences from tree fasta")
+    parser.add_argument('--input-tree', type=str,  help="input newick tree")
+    parser.add_argument('--output', type=str, help="output fasta")
     args = parser.parse_args()
 
     sequences_ = SeqIO.parse(args.sequences, "fasta")
     seq_dict_ = {rec.id : rec.seq for rec in sequences_}
-    tree = Phylo.read(args.tree, "newick")
+    tree = Phylo.read(args.input_tree, "newick")
     tree.root_at_midpoint()
     tree.find_clades()
 
@@ -68,9 +68,9 @@ if __name__=="__main__":
 
     for id_, sequence in all_sequences.items():
         if id_ in seq_dict_:
-            entry = SeqRecord(Seq(seq_dict_[id_]), id=id_)
+            entry = SeqRecord.SeqRecord(Seq.Seq(seq_dict_[id_]), id=id_)
         else:
-            entry = SeqRecord(Seq(all_sequences[id_]), id=id_)
+            entry = SeqRecord.SeqRecord(Seq.Seq(all_sequences[id_]), id=id_)
         all_entries.append(entry)
 
     SeqIO.write(all_entries, args.output, "fasta")
