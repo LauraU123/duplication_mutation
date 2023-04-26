@@ -1,8 +1,9 @@
 import argparse
 from Bio import SeqIO, Phylo, Seq
-from collections import defaultdict
+from collections import defaultdict, Counter
 import matplotlib.pyplot as plt
-
+import numpy as np
+import pandas as pd
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
@@ -119,7 +120,7 @@ if __name__=="__main__":
 
 
 
-    lst_s1, syn_1, lst_n1, nonsyn_1, lst_s2, syn_2, lst_n2, nonsyn_2 = ([] for i in range(8))
+    lst_s1, syn_1, lst_n1, nonsyn_1, lst_s2, syn_2, lst_n2, nonsyn_2, lst_sp, syn_one, lst_np, nonsyn_one = ([] for i in range(12))
 
     for i in synonymous_1.values():
         ls = list(i)
@@ -139,13 +140,6 @@ if __name__=="__main__":
     for item_ in lst_n1:
         nonsyn_1.append(int(item_))
 
-    plt.title('Mutations in RSV-A copy 1')
-    plt.xlabel("Location within the duplication")
-    plt.ylabel("Number of Sequences")
-    plt.hist([nonsyn_1, syn_1], bins=range(int(args.length)+1), stacked=True, label= ['nonsynonymous mut', 'synonymous mut']) 
-    plt.legend(loc='upper left')
-    plt.savefig("Synonymous_and_nonsynonymous_mutations_copy_1_RSV-A.png")
-
     for i in synonymous_2.values():
         ls = list(i)
         for j in ls: lst_s2.append(j)
@@ -162,13 +156,6 @@ if __name__=="__main__":
         for j in new_numbers_: lst_n2.append(j)
     for item_ in lst_n2:
         nonsyn_2.append(int(item_))
-
-    plt.title('Mutations in RSV-A copy 2')
-    plt.xlabel("Location within the duplication")
-    plt.ylabel("Number of Sequences")
-    plt.hist([nonsyn_2, syn_2], bins=range(int(args.length)+1), stacked=True, label= ['nonsynonymous mut', 'synonymous mut']) 
-    plt.legend(loc='upper left')
-    plt.savefig("mutations_RSV-A_copy_2.png")
 
     for entry in just_the_duplication:
         if '-' in entry.seq:
@@ -218,8 +205,6 @@ if __name__=="__main__":
                     sort_b.append(str("".join(sorted(entry[:2], key=str.lower))+ entry[2:]))
                 nonsynonymous_one[b.name] = set(set(sort_b).difference(set(sort_branch)))
 
-    lst_sp, syn_one, lst_np, nonsyn_one = ([] for i in range(4))
-
     for i in synonymous_one.values():
         ls = list(i)
         for j in ls: lst_sp.append(j)
@@ -236,9 +221,28 @@ if __name__=="__main__":
     for item_ in lst_np:
         nonsyn_one.append(int(item_))
 
-    plt.title('Mutations in RSV-A preinsertion')
+    plt.title('Nonsynonymous Mutations in RSV-A')
     plt.xlabel("Location within the duplication")
     plt.ylabel("Number of Sequences")
-    plt.hist([nonsyn_one, syn_one], bins=range(int(args.length)), stacked=True, label= ['nonsynonymous mut', 'synonymous mut']) 
+    plt.hist([nonsyn_1, nonsyn_2, nonsyn_one],stacked=True,  bins=range(int(args.length)+1), label=['first duplication', 'second duplication', 'no duplication'])
     plt.legend(loc='upper left')
-    plt.savefig("no_insertion_A.png")
+    plt.savefig("nonsynonymous_RSV-A_with_no_dupl.png")
+
+    seq_dict = dict()
+    for record in just_the_duplication:
+        seq_dict[record.id] = record.seq
+    total_len = tree_.total_branch_length()
+    
+    for branch in tree_.get_nonterminals(order='preorder'):
+        if pd.isna(branch.name) == False:
+            if '-'*int(args.length) not in seq_dict[branch.name]:
+                with_dupl = branch.total_branch_length()
+                break
+    without_dupl = total_len-with_dupl
+    scaled_syn_one, scaled_syn_1, scaled_syn_2 = (dict() for i in range(3))
+    for key, entry in Counter(syn_one).items():
+        scaled_syn_one[key] = entry/without_dupl
+    for key, entry in Counter(syn_1).items():
+        scaled_syn_1[key]= entry/with_dupl
+    for key, entry in Counter(syn_2).items():
+        scaled_syn_2[key]= entry/with_dupl
