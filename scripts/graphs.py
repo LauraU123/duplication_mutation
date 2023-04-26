@@ -10,7 +10,7 @@ if __name__=="__main__":
         description="reconstruct branches from root",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
-    parser.add_argument('--output', required=True, type=str, help="output fasta file")
+    parser.add_argument('--output', required=True, type=str, help="output png file")
     parser.add_argument('--length', type=str, help="length of duplication")
     parser.add_argument('--tree', required=True, type=str, help="input newick tree")
     parser.add_argument('--input', type=str, help="input fasta file")
@@ -73,7 +73,6 @@ if __name__=="__main__":
                                         nonsynonymous_2[b.name].append(f'{char_b}{char_branch}{pos+(index*3)}')
                         index+=1
 
-
     for branch in tree_.get_nonterminals(order='postorder'):
         if branch.name in synonymous_1:
             for b in branch:
@@ -118,8 +117,6 @@ if __name__=="__main__":
                     sort_b.append(str("".join(sorted(entry[:2], key=str.lower))+ entry[2:]))
                 nonsynonymous_2[b.name] = set(set(sort_b).difference(set(sort_branch)))
 
-
-
     lst_s1, syn_1, lst_n1, nonsyn_1, lst_s2, syn_2, lst_n2, nonsyn_2, lst_sp, syn_one, lst_np, nonsyn_one = ([] for i in range(12))
 
     for i in synonymous_1.values():
@@ -127,7 +124,6 @@ if __name__=="__main__":
         for j in ls: lst_s1.append(j)
     for item_ in lst_s1:
         syn_1.append(int(item_[2:]))
-
 
     for i in nonsynonymous_1.values():
         ls = list(i)
@@ -221,62 +217,55 @@ if __name__=="__main__":
     for item_ in lst_np:
         nonsyn_one.append(int(item_))
 
-    plt.title('Nonsynonymous Mutations in RSV-A')
-    plt.xlabel("Location within the duplication")
-    plt.ylabel("Number of Sequences")
-    plt.hist([nonsyn_1, nonsyn_2, nonsyn_one],stacked=True,  bins=range(int(args.length)+1), label=['first duplication', 'second duplication', 'no duplication'])
-    plt.legend(loc='upper left')
-    plt.savefig("nonsynonymous_RSV-A_with_no_dupl.png")
-
-    seq_dict = dict()
-    for record in just_the_duplication:
-        seq_dict[record.id] = record.seq
     total_len = tree_.total_branch_length()
-
+    file_ = SeqIO.parse(args.input,"fasta")
+    seq_dict = dict()
+    for record in file_:
+        seq_dict[record.id] = record.seq
     for branch in tree_.get_nonterminals(order='preorder'):
         if pd.isna(branch.name) == False:
             if '-'*int(args.length) not in seq_dict[branch.name]:
                 with_dupl = branch.total_branch_length()
                 break
     without_dupl = total_len-with_dupl
-    scaled_syn_one, scaled_syn_1, scaled_syn_2 = (dict() for i in range(3))
-    for key, entry in Counter(syn_one).items():
-        scaled_syn_one[key] = entry/without_dupl
-    for key, entry in Counter(syn_1).items():
-        scaled_syn_1[key]= entry/with_dupl
-    for key, entry in Counter(syn_2).items():
-        scaled_syn_2[key]= entry/with_dupl
+    scaled_syn_one, scaled_syn_1, scaled_syn_2, scaled_nonsyn_one, scaled_nonsyn_1, scaled_nonsyn_2 = (dict() for i in range(6))
+
+    predupl_ = [syn_one, nonsyn_one]
+    predupl_dicts = [scaled_syn_one, scaled_nonsyn_one]
+    post_dupl = [syn_1, syn_2, nonsyn_1, nonsyn_2]
+    post_dupl_dicts = [scaled_syn_1, scaled_syn_2, scaled_nonsyn_1, scaled_nonsyn_2]
+
+    for a, b in zip(predupl_, predupl_dicts):
+        for key, entry in Counter(a).items():
+            b[key] = entry/without_dupl
+    
+    for a, b in zip(post_dupl, post_dupl_dicts):
+        for key, entry in Counter(a).items():
+            b[key] = entry/with_dupl
 
     od = OrderedDict(sorted(scaled_syn_1.items()))
     x = list(od.values())
     res = np.cumsum(x)
     cumulative_, cumulative_2, cumulative_one = (dict() for i in range(3))
-    for i, j in zip(od.keys(), res):
-        cumulative_[i] = j
+    for i, j in zip(od.keys(), res): cumulative_[i] = j
     od2 = OrderedDict(sorted(scaled_syn_2.items()))
     x2 = list(od2.values())
     res2 = np.cumsum(x2)
-    for i, j in zip(od2.keys(), res2):
-        cumulative_2[i] = j
+    for i, j in zip(od2.keys(), res2): cumulative_2[i] = j
     od_ = OrderedDict(sorted(scaled_syn_one.items()))
     x_ = list(od_.values())
     res_ = np.cumsum(x_)
     for i, j in zip(od_.keys(), res_): cumulative_one[i] = j
 
-    plt.step(cumulative_.keys(), cumulative_.values(), label= f'dupl 1')
-    plt.step(cumulative_2.keys(), cumulative_2.values(), label=f' dupl 2' )
-    plt.step(cumulative_one.keys(), cumulative_one.values(), label= f' no dupl')
+    plt.step(cumulative_.keys(), cumulative_.values(), label= f'1st copy postduplication')
+    plt.step(cumulative_2.keys(), cumulative_2.values(), label=f'2nd copy postduplication' )
+    plt.step(cumulative_one.keys(), cumulative_one.values(), label= f'preduplication')
     plt.legend(loc='upper left')
     plt.xlabel('Cumulative Sum of Mutations')
     plt.ylabel('Location in the duplication')
     plt.title('Synonymous Mutations in the Duplicated Region of G in RSV-A')
-    plt.savefig("cumulative_sum_syn_RSV-A.png")
-
-    scaled_nonsyn_one, scaled_nonsyn_1, scaled_nonsyn_2 = (dict() for i in range(3))
-    for key, entry in Counter(nonsyn_one).items(): scaled_nonsyn_one[key] = entry/without_dupl
-    for key, entry in Counter(nonsyn_1).items(): scaled_nonsyn_1[key]= entry/with_dupl 
-    for key, entry in Counter(nonsyn_2).items(): scaled_nonsyn_2[key]= entry/with_dupl
-
+    plt.savefig(args.output)
+    """
     od = OrderedDict(sorted(scaled_nonsyn_1.items()))
     x = list(od.values())
     res = np.cumsum(x)
@@ -291,11 +280,11 @@ if __name__=="__main__":
     res_ = np.cumsum(x_)
     for i, j in zip(od_.keys(), res_): cumulative_one[i] = j
 
-    plt.step(cumulative_.keys(), cumulative_.values(), label= '1st duplication')
-    plt.step(cumulative_2.keys(), cumulative_2.values(), label='2nd duplication' )
+    plt.step(cumulative_.keys(), cumulative_.values(), label= '1st copy postduplication')
+    plt.step(cumulative_2.keys(), cumulative_2.values(), label='2nd copy postduplication' )
     plt.step(cumulative_one.keys(), cumulative_one.values(), label='preduplication')
     plt.legend(loc='upper left')
     plt.ylabel('Cumulative Sum of Mutations')
     plt.xlabel('Location in the duplication')
     plt.title('Cumulative Sum of non-synonymous Mutations in the Duplicated Region of G in RSV-A')
-    plt.savefig("cumulative_sum_nonsyn_RSV-A.png")
+    plt.savefig(args.output)"""
