@@ -5,7 +5,7 @@ A_OR_B = ["a"]
 
 rule all:
     input:
-        expand("results/{a_or_b}/graphs/cumulative_sum_nonsyn.png", a_or_b=A_OR_B)
+        expand("results/{a_or_b}/graphs/cumulative_sum_syn.png", a_or_b=A_OR_B)
 
 rule branch_from_root:
     input:
@@ -107,7 +107,7 @@ rule graphs:
         data = rules.find_unknowns.output.reconstructed_fasta,
         tree_ = rules.branch_from_root.input.tree
     output:
-        graph_cumsum_nonsyn = "results/{a_or_b}/graphs/cumulative_sum_nonsyn.png",
+        graph_cumsum_syn = "results/{a_or_b}/graphs/cumulative_sum_syn.png"
     params:
         length = lambda w: config["graphs"].get(w.a_or_b)
     shell:
@@ -116,5 +116,5 @@ rule graphs:
         --input {input.data} \
         --tree {input.tree_} \
         --length {params.length} \
-        --output {output.graph_cumsum_nonsyn}
+        --output {output.graph_cumsum_syn}
         """
