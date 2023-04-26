@@ -1,6 +1,6 @@
 import argparse
 from Bio import SeqIO, Phylo, Seq
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -232,7 +232,7 @@ if __name__=="__main__":
     for record in just_the_duplication:
         seq_dict[record.id] = record.seq
     total_len = tree_.total_branch_length()
-    
+
     for branch in tree_.get_nonterminals(order='preorder'):
         if pd.isna(branch.name) == False:
             if '-'*int(args.length) not in seq_dict[branch.name]:
@@ -246,3 +246,56 @@ if __name__=="__main__":
         scaled_syn_1[key]= entry/with_dupl
     for key, entry in Counter(syn_2).items():
         scaled_syn_2[key]= entry/with_dupl
+
+    od = OrderedDict(sorted(scaled_syn_1.items()))
+    x = list(od.values())
+    res = np.cumsum(x)
+    cumulative_, cumulative_2, cumulative_one = (dict() for i in range(3))
+    for i, j in zip(od.keys(), res):
+        cumulative_[i] = j
+    od2 = OrderedDict(sorted(scaled_syn_2.items()))
+    x2 = list(od2.values())
+    res2 = np.cumsum(x2)
+    for i, j in zip(od2.keys(), res2):
+        cumulative_2[i] = j
+    od_ = OrderedDict(sorted(scaled_syn_one.items()))
+    x_ = list(od_.values())
+    res_ = np.cumsum(x_)
+    for i, j in zip(od_.keys(), res_): cumulative_one[i] = j
+
+    plt.step(cumulative_.keys(), cumulative_.values(), label= f'dupl 1')
+    plt.step(cumulative_2.keys(), cumulative_2.values(), label=f' dupl 2' )
+    plt.step(cumulative_one.keys(), cumulative_one.values(), label= f' no dupl')
+    plt.legend(loc='upper left')
+    plt.xlabel('Cumulative Sum of Mutations')
+    plt.ylabel('Location in the duplication')
+    plt.title('Synonymous Mutations in the Duplicated Region of G in RSV-A')
+    plt.savefig("cumulative_sum_syn_RSV-A.png")
+
+    scaled_nonsyn_one, scaled_nonsyn_1, scaled_nonsyn_2 = (dict() for i in range(3))
+    for key, entry in Counter(nonsyn_one).items(): scaled_nonsyn_one[key] = entry/without_dupl
+    for key, entry in Counter(nonsyn_1).items(): scaled_nonsyn_1[key]= entry/with_dupl 
+    for key, entry in Counter(nonsyn_2).items(): scaled_nonsyn_2[key]= entry/with_dupl
+
+    od = OrderedDict(sorted(scaled_nonsyn_1.items()))
+    x = list(od.values())
+    res = np.cumsum(x)
+    cumulative_, cumulative_one, cumulative_2 = (dict() for i in range(3))
+    for i, j in zip(od.keys(), res): cumulative_[i] = j
+    od2 = OrderedDict(sorted(scaled_nonsyn_2.items()))
+    x2 = list(od2.values())
+    res2 = np.cumsum(x2)
+    for i, j in zip(od2.keys(), res2): cumulative_2[i] = j
+    od_ = OrderedDict(sorted(scaled_nonsyn_one.items()))
+    x_ = list(od_.values())
+    res_ = np.cumsum(x_)
+    for i, j in zip(od_.keys(), res_): cumulative_one[i] = j
+
+    plt.step(cumulative_.keys(), cumulative_.values(), label= '1st duplication')
+    plt.step(cumulative_2.keys(), cumulative_2.values(), label='2nd duplication' )
+    plt.step(cumulative_one.keys(), cumulative_one.values(), label='preduplication')
+    plt.legend(loc='upper left')
+    plt.ylabel('Cumulative Sum of Mutations')
+    plt.xlabel('Location in the duplication')
+    plt.title('Cumulative Sum of non-synonymous Mutations in the Duplicated Region of G in RSV-A')
+    plt.savefig("cumulative_sum_nonsyn_RSV-A.png")
