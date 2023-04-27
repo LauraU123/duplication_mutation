@@ -1,7 +1,7 @@
 #this workflow reconstructs the mutations in the RSV A and RSV B duplicated regions of the G gene
 
 configfile: "config/configfile.yaml"
-A_OR_B = ["a"]
+A_OR_B = ["b", "a"]
 
 rule all:
     input:

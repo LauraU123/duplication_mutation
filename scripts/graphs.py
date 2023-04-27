@@ -35,7 +35,6 @@ if __name__=="__main__":
             if len(only_one)== int(args.length):
                 for i in range(0, len(entry.seq[1:-2]), 3):
                     onlyone[entry.id].append(only_one[i:i+3])
-    print(onlyone)
     for branch in tree_.get_nonterminals(order='postorder'):
         if branch.name in copy1:
             for b in branch:
@@ -123,6 +122,7 @@ if __name__=="__main__":
                 nonsynonymous_2[b.name] = set(set(sort_b).difference(set(sort_branch)))
 
     lst_s1, syn_1, lst_n1, nonsyn_1, lst_s2, syn_2, lst_n2, nonsyn_2, lst_sp, syn_one, lst_np, nonsyn_one = ([] for i in range(12))
+    scaled_syn_one, scaled_syn_1, scaled_syn_2, scaled_nonsyn_one, scaled_nonsyn_1, scaled_nonsyn_2 = (dict() for i in range(6))
 
     for i in synonymous_1.values():
         ls = list(i)
@@ -158,7 +158,6 @@ if __name__=="__main__":
     for item_ in lst_n2:
         nonsyn_2.append(int(item_))
 
-
     for branch in tree_.get_nonterminals(order='postorder'):
         if branch.name in onlyone:
             for b in branch:
@@ -171,7 +170,6 @@ if __name__=="__main__":
                                 for char_branch, char_b in zip(codon_branch, codon_b):
                                     pos +=1
                                     if char_branch != char_b:
-                                        print(entry_unsorted)
                                         entry_unsorted = f'{char_b}{char_branch}{pos+(index*3)}'
                                         synonymous_one[b.name].append(str("".join(sorted(entry_unsorted[:2], key=str.lower))+ entry_unsorted[2:]))
                             else:
@@ -191,8 +189,7 @@ if __name__=="__main__":
 
     for branch in tree_.get_nonterminals(order='preorder'):
         sort_branch = []
-        for e in nonsynonymous_one[branch.name]:
-            sort_branch.append(str("".join(sorted(e[:2], key=str.lower))+ e[2:]))
+        for e in nonsynonymous_one[branch.name]: sort_branch.append(str("".join(sorted(e[:2], key=str.lower))+ e[2:]))
 
         for b in branch:
             if b.name in nonsynonymous_one:
@@ -217,7 +214,6 @@ if __name__=="__main__":
     for item_ in lst_np:
         nonsyn_one.append(int(item_))
 
-
     total_len = tree_.total_branch_length()
     file_ = SeqIO.parse(args.input,"fasta")
     seq_dict = dict()
@@ -229,8 +225,7 @@ if __name__=="__main__":
                 with_dupl = branch.total_branch_length()
                 break
     without_dupl = total_len-with_dupl
-    scaled_syn_one, scaled_syn_1, scaled_syn_2, scaled_nonsyn_one, scaled_nonsyn_1, scaled_nonsyn_2 = (dict() for i in range(6))
-
+    
     predupl_ = [syn_one, nonsyn_one]
     predupl_dicts = [scaled_syn_one, scaled_nonsyn_one]
     post_dupl = [syn_1, syn_2, nonsyn_1, nonsyn_2]
@@ -262,10 +257,7 @@ if __name__=="__main__":
     axs[0].step(cumulative_syn.keys(), cumulative_syn.values(), label= f'1st copy postduplication')
     axs[0].step(cumulative_2_syn.keys(), cumulative_2_syn.values(), label=f'2nd copy postduplication' )
     axs[0].step(cumulative_one_syn.keys(), cumulative_one_syn.values(), label= f'preduplication')
-    #plt.legend(loc='upper left')
-    #plt.xlabel('Cumulative Sum of Mutations')
-    #plt.ylabel('Location in the duplication')
-    fig.suptitle('Synonymous Mutations in the Duplicated Region of G in RSV-A')
+    axs[0].legend(loc='upper left')
     
     od = OrderedDict(sorted(scaled_nonsyn_1.items()))
     x = list(od.values())
@@ -280,12 +272,9 @@ if __name__=="__main__":
     x_ = list(od_.values())
     res_ = np.cumsum(x_)
     for i, j in zip(od_.keys(), res_): cumulative_one[i] = j
-
     axs[1].step(cumulative_.keys(), cumulative_.values(), label= '1st copy postduplication')
     axs[1].step(cumulative_2.keys(), cumulative_2.values(), label='2nd copy postduplication' )
     axs[1].step(cumulative_one.keys(), cumulative_one.values(), label='preduplication')
-    #plt.legend(loc='upper left')
-    #plt.ylabel('Cumulative Sum of Mutations')
-    #plt.xlabel('Location in the duplication')
-    fig.suptitle('Cumulative Sum of non-synonymous Mutations in the Duplicated Region of G in RSV-A')
+    axs[1].legend(loc='upper left')
+    fig.suptitle('Synonymous and non-synonymous Mutations')
     plt.savefig(args.output)
