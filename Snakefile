@@ -1,7 +1,7 @@
 #this workflow reconstructs the mutations in the RSV A and RSV B duplicated regions of the G gene
 
 configfile: "config/configfile.yaml"
-A_OR_B = ["b", "a"]
+A_OR_B = ["a", "b"]
 
 rule all:
     input:
@@ -109,12 +109,14 @@ rule graphs:
     output:
         graph_cumsum_syn = "results/{a_or_b}/graphs/cumulative_sum_syn.png"
     params:
-        length = lambda w: config["graphs"].get(w.a_or_b)
+        length = lambda w: config["graphs"].get(w.a_or_b),
+        tsv = "results/{a_or_b}/graphs/cumulative_sum_"
     shell:
         """
         python3 scripts/graphs.py \
         --input {input.data} \
         --tree {input.tree_} \
         --length {params.length} \
-        --output {output.graph_cumsum_syn}
+        --output {output.graph_cumsum_syn} \
+        --tsv {params.tsv}
         """

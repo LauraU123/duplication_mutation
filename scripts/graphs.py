@@ -4,6 +4,8 @@ from collections import defaultdict, Counter, OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.stats import kstest
+from scipy import stats
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
@@ -11,6 +13,7 @@ if __name__=="__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     
     parser.add_argument('--output', required=True, type=str, help="output png file")
+    parser.add_argument('--tsv', required=True, type=str, help="output tsv file")
     parser.add_argument('--length', type=str, help="length of duplication")
     parser.add_argument('--tree', required=True, type=str, help="input newick tree")
     parser.add_argument('--input', type=str, help="input fasta file")
@@ -257,7 +260,6 @@ if __name__=="__main__":
     axs[0].step(cumulative_syn.keys(), cumulative_syn.values(), label= f'1st copy postduplication')
     axs[0].step(cumulative_2_syn.keys(), cumulative_2_syn.values(), label=f'2nd copy postduplication' )
     axs[0].step(cumulative_one_syn.keys(), cumulative_one_syn.values(), label= f'preduplication')
-    axs[0].legend(loc='upper left')
     
     od = OrderedDict(sorted(scaled_nonsyn_1.items()))
     x = list(od.values())
@@ -275,6 +277,33 @@ if __name__=="__main__":
     axs[1].step(cumulative_.keys(), cumulative_.values(), label= '1st copy postduplication')
     axs[1].step(cumulative_2.keys(), cumulative_2.values(), label='2nd copy postduplication' )
     axs[1].step(cumulative_one.keys(), cumulative_one.values(), label='preduplication')
-    axs[1].legend(loc='upper left')
+    axs[1].legend(loc='lower center', bbox_to_anchor=(0.5, 1.05),
+          ncol=3, fancybox=True, shadow=True)
     fig.suptitle('Synonymous and non-synonymous Mutations')
     plt.savefig(args.output)
+
+
+    preduplication = [i for i in cumulative_one.values()]
+    postduplication_1 = [i for i in cumulative_.values()]
+    postduplication_2 = [i for i in cumulative_2.values()]
+
+    values_1 = np.array(postduplication_1)
+    values_2 = np.array(postduplication_2)
+    values_pre = np.array(preduplication)
+    dictionary_ = {'Preduplication statistic': [" ", stats.ks_2samp(values_pre, values_1),  stats.ks_2samp(values_pre, values_2)], 'PostDuplication Copy 1 statistic': [stats.ks_2samp(values_pre, values_1), " ", stats.ks_2samp(values_1, values_2)], "PostDuplication Copy 2 statistic": [stats.ks_2samp(values_pre, values_2), stats.ks_2samp(values_1, values_2),  " "]}
+    df = pd.DataFrame(dictionary_)
+    df.index = ['Preduplication', 'PostDuplication Copy 1', "PostDuplication Copy 2"]
+    df.to_csv(args.tsv + "nonsyn.tsv", sep='\t')
+
+
+    preduplication = [i for i in cumulative_one_syn.values()]
+    postduplication_1 = [i for i in cumulative_syn.values()]
+    postduplication_2 = [i for i in cumulative_2_syn.values()]
+
+    values_1 = np.array(postduplication_1)
+    values_2 = np.array(postduplication_2)
+    values_pre = np.array(preduplication)
+    dictionary_ = {'Preduplication statistic': [" ", stats.ks_2samp(values_pre, values_1),  stats.ks_2samp(values_pre, values_2)], 'PostDuplication Copy 1 statistic': [stats.ks_2samp(values_pre, values_1), " ", stats.ks_2samp(values_1, values_2)], "PostDuplication Copy 2 statistic": [stats.ks_2samp(values_pre, values_2), stats.ks_2samp(values_1, values_2),  " "]}
+    df = pd.DataFrame(dictionary_)
+    df.index = ['Preduplication', 'PostDuplication Copy 1', "PostDuplication Copy 2"]
+    df.to_csv(args.tsv+"_syn.tsv", sep='\t')
