@@ -10,7 +10,7 @@ def reconstruct_insertions_(fasta, tree, output):
     tree_.find_clades()
     mut_dict = defaultdict(list)
     seq_dict = dict()
-
+    all_branch_seq = []
     for record in f:
         seq_dict[record.id] = record.seq
 
