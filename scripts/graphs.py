@@ -3,6 +3,7 @@ from Bio import SeqIO, Phylo, Seq
 from collections import defaultdict, Counter, OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 import pandas as pd
 from scipy.stats import kstest
 from scipy import stats
@@ -201,12 +202,12 @@ if __name__=="__main__":
                     sort_b.append(str("".join(sorted(entry[:2], key=str.lower))+ entry[2:]))
                 nonsynonymous_one[b.name] = set(set(sort_b).difference(set(sort_branch)))
 
-    for i in synonymous_one.values():
-        ls = list(i)
-        for j in ls: lst_sp.append(j)
+    for muts in synonymous_one.values():
+        ls = list(muts)
+        for mut_lst in ls: lst_sp.append(mut_lst)
     for item_ in lst_sp:
         syn_one.append(int(item_[2:]))
-
+    print(syn_one) # locations of each mutation
     for i in nonsynonymous_one.values():
         ls = list(i)
         numbers_ = []
@@ -241,20 +242,25 @@ if __name__=="__main__":
 
     for a, b in zip(post_dupl, post_dupl_dicts):
         for key, entry in Counter(a).items():
-            b[key] = (entry/with_dupl)/int(args.length)
+            b[key] = (entry/with_dupl)/int(args.length) #normalisation by length of gene and tree with duplication
+
+
     od = OrderedDict(sorted(scaled_syn_1.items()))
     x = list(od.values())
     res = np.cumsum(x)
     cumulative_syn, cumulative_2_syn, cumulative_one_syn = (dict() for i in range(3))
-    for i, j in zip(od.keys(), res): cumulative_syn[i] = j
+    for i, j in zip(od.keys(), res): 
+        cumulative_syn[i] = j
     od2 = OrderedDict(sorted(scaled_syn_2.items()))
     x2 = list(od2.values())
     res2 = np.cumsum(x2)
-    for i, j in zip(od2.keys(), res2): cumulative_2_syn[i] = j
+    for i, j in zip(od2.keys(), res2):
+        cumulative_2_syn[i] = j
     od_ = OrderedDict(sorted(scaled_syn_one.items()))
     x_ = list(od_.values())
     res_ = np.cumsum(x_)
-    for i, j in zip(od_.keys(), res_): cumulative_one_syn[i] = j
+    for i, j in zip(od_.keys(), res_):
+        cumulative_one_syn[i] = j
 
     fig, axs = plt.subplots(1,2)
     axs[0].step(cumulative_syn.keys(), cumulative_syn.values(), label= f'1st copy postduplication')
@@ -279,30 +285,39 @@ if __name__=="__main__":
     axs[1].step(cumulative_one.keys(), cumulative_one.values(), label='preduplication')
     axs[1].legend(loc='lower center', bbox_to_anchor=(0.5, 1.05),
           ncol=3, fancybox=True, shadow=True)
+    
     fig.suptitle('Synonymous and non-synonymous Mutations')
     plt.savefig(args.output)
-    """
-    preduplication = [i for i in cumulative_one.values()]
-    postduplication_1 = [i for i in cumulative_.values()]
-    postduplication_2 = [i for i in cumulative_2.values()]
-
-    values_1 = np.array(postduplication_1)
-    values_2 = np.array(postduplication_2)
-    values_pre = np.array(preduplication)"""
+    #synone, syn_1 and syn_2 are lists (before normalisation by division by tree branch length and length of duplication)
+    #they each show the number of times a mutation occurs at a particular location, e.g. 5, 5, 5, 3, 3, 3, 3, 6, 1, 12, ... etc
+    # the part of the workflow below calculates the Kolmogorov-Smirnov Statistics for them
     dictionary_ = {'Preduplication statistic': [" ", stats.ks_2samp(syn_one, syn_1),  stats.ks_2samp(syn_one, syn_2)], 'PostDuplication Copy 1 statistic': [stats.ks_2samp(syn_one, syn_1), " ", stats.ks_2samp(syn_1, syn_2)], "PostDuplication Copy 2 statistic": [stats.ks_2samp(syn_one, syn_2), stats.ks_2samp(syn_1, syn_2),  " "]}
     df = pd.DataFrame(dictionary_)
     df.index = ['Preduplication', 'PostDuplication Copy 1', "PostDuplication Copy 2"]
     df.to_csv(args.tsv + "nonsyn.tsv", sep='\t')
 
-    """
-    preduplication = [i for i in cumulative_one_syn.values()]
-    postduplication_1 = [i for i in cumulative_syn.values()]
-    postduplication_2 = [i for i in cumulative_2_syn.values()]
-
-    values_1 = np.array(postduplication_1)
-    values_2 = np.array(postduplication_2)
-    values_pre = np.array(preduplication)"""
     dictionary_ = {'Preduplication statistic': [" ", stats.ks_2samp(nonsyn_one, nonsyn_1),  stats.ks_2samp(nonsyn_one, nonsyn_2)], 'PostDuplication Copy 1 statistic': [stats.ks_2samp(nonsyn_one, nonsyn_1), " ", stats.ks_2samp(nonsyn_1, nonsyn_2)], "PostDuplication Copy 2 statistic": [stats.ks_2samp(nonsyn_one, nonsyn_2), stats.ks_2samp(nonsyn_1, nonsyn_2),  " "]}
     df = pd.DataFrame(dictionary_)
     df.index = ['Preduplication', 'PostDuplication Copy 1', "PostDuplication Copy 2"]
     df.to_csv(args.tsv+"_syn.tsv", sep='\t')
+
+
+    #Poisson Distribution
+
+
+number_of_muts_syn = [len(syn_one), len(syn_1), len(syn_2)]
+number_of_muts_nonsyn = [len(nonsyn_one), len(nonsyn_1), len(nonsyn_2)]
+
+for nr_of_muts in number_of_muts_syn:
+    distr =[]
+    for i in np.arange(0.001, 1.001, 0.001):
+        poisson = (((i*without_dupl)**(nr_of_muts))*math.exp(-i*without_dupl))/nr_of_muts
+        distr.append(poisson)
+    print(max(distr))
+
+for nr_of_muts in number_of_muts_nonsyn:
+    distr =[]
+    for i in np.arange(0.001, 1.001, 0.001):
+        poisson = (((i*without_dupl)**(nr_of_muts))*math.exp(-i*without_dupl))/nr_of_muts
+        distr.append(poisson)
+    print(max(distr))
