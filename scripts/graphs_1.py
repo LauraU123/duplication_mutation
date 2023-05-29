@@ -7,21 +7,20 @@ import pandas as pd
 from scipy.stats import kstest
 from scipy import stats
 
-
 def separate_duplications(duplicationfile, lengthofdupl):
+    """
+    Divides sequences from duplication file into preduplication, and postduplication copies 1 and 2
+    """
     duplication_file = SeqIO.parse(duplicationfile, 'fasta')
     preduplication, postduplication_1, postduplication_2 = (defaultdict(list) for i in range(3))
     for entry in duplication_file:
-        #dividing the sequences into the first and second copy if no gaps are present
         if '-' not in entry.seq:
             copy_1 = entry.seq[:int(lengthofdupl)][1:-2]
             copy_2 = entry.seq[int(lengthofdupl):][1:-2]
-            #make dictionary with id: list of codons 
             for i in range(0, len(copy_1), 3):
                 postduplication_1[entry.id].append(copy_1[i:i+3])
             for i in range(0, len(copy_2), 3):
                 postduplication_2[entry.id].append(copy_2[i:i+3])
-        #if gaps are present (i.e. preduplication)
         else:
             preduplication_ = entry.seq.replace("-", "")
             if len(preduplication_)== int(lengthofdupl):
@@ -31,6 +30,9 @@ def separate_duplications(duplicationfile, lengthofdupl):
 
 
 def recursive_mutations(treefile, copy):
+    """
+    Makes basic first reconstruction of common mutations moved to common ancestor - refined by function below
+    """
     synonymous_, nonsynonymous_ = (defaultdict(list) for i in range(2))
     for branch in treefile.get_nonterminals(order='postorder'):
         if branch.name in copy:
@@ -57,6 +59,9 @@ def recursive_mutations(treefile, copy):
     return(nonsynonymous_, synonymous_)
 
 def refine_recursive(treefile, synonymous, nonsynonymous):
+    """
+    Moves common mutations to common ancestor - up the tree. Returns synonymous and nonsynonymous dictionaries.
+    """
     for branch in treefile.get_nonterminals(order='postorder'):
         if branch.name in synonymous:
             for b in branch:
@@ -80,23 +85,21 @@ def refine_recursive(treefile, synonymous, nonsynonymous):
 
 
 def mutations(synonymous, nonsynonymous):
+    """
+    Returns lists of synonymous and nonsynonymous mutation locations in the duplication
+    """
     syn_, nonsyn_, lst_s, lst_n = ([] for i in range(4))
     for i in synonymous.values():
         ls = list(i)
         for j in ls: lst_s.append(j)
-    for item_ in lst_s:
-        syn_.append(int(item_[2:]))
-
+    for item_ in lst_s: syn_.append(int(item_[2:]))
     for i in nonsynonymous.values():
         ls = list(i)
         numbers_ = []
-        for it in ls:
-            numbers_.append(it[2:])
+        for it in ls:numbers_.append(it[2:])
         new_numbers_ = list(set(numbers_))
         for j in new_numbers_: lst_n.append(j)
-
-    for item_ in lst_n:
-        nonsyn_.append(int(item_))
+    for item_ in lst_n: nonsyn_.append(int(item_))
     return(nonsyn_, syn_)
 
 if __name__=="__main__":
@@ -158,7 +161,6 @@ if __name__=="__main__":
         for key, entry in Counter(a).items():
             b[key] = (entry/with_dupl)/int(args.length) #normalisation by length of gene and tree with duplication
 
-
     od = OrderedDict(sorted(scaled_syn_1.items()))
     x = list(od.values())
     res = np.cumsum(x)
@@ -190,8 +192,6 @@ if __name__=="__main__":
     x2 = list(od2.values())
     res2 = np.cumsum(x2)
 
-
-
     for i, j in zip(od2.keys(), res2): cumulative_2[i] = j
     od_ = OrderedDict(sorted(scaled_nonsyn_one.items()))
     x_ = list(od_.values())
@@ -218,12 +218,9 @@ if __name__=="__main__":
     df.index = ['Preduplication', 'PostDuplication Copy 1', "PostDuplication Copy 2"]
     df.to_csv(args.tsv+"_syn.tsv", sep='\t')
 
-
     #Poisson Distribution
-
-
-number_of_muts_syn = [len(syn_one), len(syn_1), len(syn_2)] #number of synonymous mutations in copy of the duplication
-number_of_muts_nonsyn = [len(nonsyn_one), len(nonsyn_1), len(nonsyn_2)] #number of nonsynonymous mutations in each copy of the duplication
+    number_of_muts_syn = [len(syn_one), len(syn_1), len(syn_2)] #number of synonymous mutations in copy of the duplication
+    number_of_muts_nonsyn = [len(nonsyn_one), len(nonsyn_1), len(nonsyn_2)] #number of nonsynonymous mutations in each copy of the duplication
 
 for nr_of_muts in number_of_muts_syn:
     distr =[]
