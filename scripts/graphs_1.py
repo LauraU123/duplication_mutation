@@ -11,9 +11,8 @@ def separate_duplications(duplicationfile, lengthofdupl):
     """
     Divides sequences from duplication file into preduplication, and postduplication copies 1 and 2
     """
-    duplication_file = SeqIO.parse(duplicationfile, 'fasta')
     preduplication, postduplication_1, postduplication_2 = (defaultdict(list) for i in range(3))
-    for entry in duplication_file:
+    for entry in duplicationfile:
         if '-' not in entry.seq:
             copy_1 = entry.seq[:int(lengthofdupl)][1:-2]
             copy_2 = entry.seq[int(lengthofdupl):][1:-2]
@@ -120,25 +119,10 @@ if __name__=="__main__":
     tree_file.root_at_midpoint()
     tree_file.find_clades()
 
-    copy1, copy2, preduplication = separate_duplications(args.input, args.length)
-    nonsynonymous_1, synonymous_1 = recursive_mutations(tree_file, copy1)
-    nonsynonymous_2, synonymous_2 = recursive_mutations(tree_file, copy2)
-    nonsynonymous_pre, synonymous_pre = recursive_mutations(tree_file, preduplication)
-
-    nonsynonymous_1_refined, synonymous_1_refined = refine_recursive(tree_file, nonsynonymous_1, synonymous_1)
-    nonsynonymous_2_refined, synonymous_2_refined = refine_recursive(tree_file, nonsynonymous_2, synonymous_2)
-    nonsynonymous_pre_refined, synonymous_pre_refined = refine_recursive(tree_file, nonsynonymous_pre, synonymous_pre)
-
-    nonsyn_1, syn_1 = mutations(synonymous_1_refined, nonsynonymous_1_refined)
-    nonsyn_2, syn_2 = mutations(synonymous_2_refined, nonsynonymous_2_refined)
-    nonsyn_pre, syn_pre = mutations(synonymous_pre_refined, nonsynonymous_pre_refined)
-
-    scaled_syn_one, scaled_syn_1, scaled_syn_2, scaled_nonsyn_one, scaled_nonsyn_1, scaled_nonsyn_2 = (dict() for i in range(6))
-
+    #length of tree with and without duplication
     total_len = tree_file.total_branch_length()
-    file_ = SeqIO.parse(args.input,"fasta")
     seq_dict = dict()
-    for record in file_:
+    for record in duplication_file:
         seq_dict[record.id] = record.seq
     for branch in tree_file.get_nonterminals(order='preorder'):
         if pd.isna(branch.name) == False:
@@ -146,8 +130,21 @@ if __name__=="__main__":
                 with_dupl = branch.total_branch_length()
                 break
     without_dupl = total_len-with_dupl
+
+    copy1, copy2, preduplication = separate_duplications(duplication_file, args.length)
+    nonsynonymous_1, synonymous_1 = recursive_mutations(tree_file, copy1)
+    nonsynonymous_2, synonymous_2 = recursive_mutations(tree_file, copy2)
+    nonsynonymous_pre, synonymous_pre = recursive_mutations(tree_file, preduplication)
+    nonsynonymous_1_refined, synonymous_1_refined = refine_recursive(tree_file, nonsynonymous_1, synonymous_1)
+    nonsynonymous_2_refined, synonymous_2_refined = refine_recursive(tree_file, nonsynonymous_2, synonymous_2)
+    nonsynonymous_pre_refined, synonymous_pre_refined = refine_recursive(tree_file, nonsynonymous_pre, synonymous_pre)
+    nonsyn_1, syn_1 = mutations(synonymous_1_refined, nonsynonymous_1_refined)
+    nonsyn_2, syn_2 = mutations(synonymous_2_refined, nonsynonymous_2_refined)
+    nonsyn_pre, syn_pre = mutations(synonymous_pre_refined, nonsynonymous_pre_refined)
+
+    scaled_syn_one, scaled_syn_1, scaled_syn_2, scaled_nonsyn_one, scaled_nonsyn_1, scaled_nonsyn_2 = (dict() for i in range(6))
     
-    predupl_ = [syn_one, nonsyn_one]
+    predupl_ = [syn_pre, nonsyn_pre]
     predupl_dicts = [scaled_syn_one, scaled_nonsyn_one]
     post_dupl = [syn_1, syn_2, nonsyn_1, nonsyn_2]
     post_dupl_dicts = [scaled_syn_1, scaled_syn_2, scaled_nonsyn_1, scaled_nonsyn_2]
@@ -155,7 +152,6 @@ if __name__=="__main__":
     for a, b in zip(predupl_, predupl_dicts):
         for key, entry in Counter(a).items():
             b[key] = (entry/without_dupl)/int(args.length)
-
 
     for a, b in zip(post_dupl, post_dupl_dicts):
         for key, entry in Counter(a).items():
