@@ -27,7 +27,6 @@ def separate_duplications(duplicationfile, lengthofdupl):
             if len(preduplication_)== int(lengthofdupl):
                 for i in range(0, len(entry.seq[1:-2]), 3):
                     preduplication[entry.id].append(preduplication_[i:i+3])
-    
     return(postduplication_1, postduplication_2, preduplication)
 
 
@@ -125,35 +124,20 @@ if __name__=="__main__":
 
     nonsynonymous_1_refined, synonymous_1_refined = refine_recursive(tree_file, nonsynonymous_1, synonymous_1)
     nonsynonymous_2_refined, synonymous_2_refined = refine_recursive(tree_file, nonsynonymous_2, synonymous_2)
+    nonsynonymous_pre_refined, synonymous_pre_refined = refine_recursive(tree_file, nonsynonymous_pre, synonymous_pre)
 
     nonsyn_1, syn_1 = mutations(synonymous_1_refined, nonsynonymous_1_refined)
     nonsyn_2, syn_2 = mutations(synonymous_2_refined, nonsynonymous_2_refined)
+    nonsyn_pre, syn_pre = mutations(synonymous_pre_refined, nonsynonymous_pre_refined)
 
-    lst_sp, syn_one, lst_np, nonsyn_one = ([] for i in range(4))
     scaled_syn_one, scaled_syn_1, scaled_syn_2, scaled_nonsyn_one, scaled_nonsyn_1, scaled_nonsyn_2 = (dict() for i in range(6))
-
-    for muts in synonymous_one.values():
-        ls = list(muts)
-        for mut_lst in ls: lst_sp.append(mut_lst)
-    for item_ in lst_sp:
-        syn_one.append(int(item_[2:]))
-    print(syn_one) # locations of each mutation
-    for i in nonsynonymous_one.values():
-        ls = list(i)
-        numbers_ = []
-        for it in ls:
-            numbers_.append(it[2:])
-        new_numbers_ = list(set(numbers_))
-        for j in new_numbers_: lst_np.append(j)
-    for item_ in lst_np:
-        nonsyn_one.append(int(item_))
 
     total_len = tree_file.total_branch_length()
     file_ = SeqIO.parse(args.input,"fasta")
     seq_dict = dict()
     for record in file_:
         seq_dict[record.id] = record.seq
-    for branch in tree_.get_nonterminals(order='preorder'):
+    for branch in tree_file.get_nonterminals(order='preorder'):
         if pd.isna(branch.name) == False:
             if '-'*int(args.length) not in seq_dict[branch.name]:
                 with_dupl = branch.total_branch_length()
