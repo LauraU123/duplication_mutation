@@ -7,7 +7,6 @@ import pandas as pd
 from scipy import stats
 
 def separate_duplications(lengthofdupl):
-
     """
     Divides sequences from duplication file into preduplication, and postduplication copies 1 and 2
     """
@@ -101,15 +100,6 @@ def mutations(synonymous, nonsynonymous):
     for item_ in lst_n: nonsyn_.append(int(item_))
     return(nonsyn_, syn_)
 
-def scaled_mutations(list_of_dictionaries, dupltype):
-    for a, b in zip(predupl_, predupl_dicts):
-        for key, entry in Counter(a).items():
-            if dupltype == "pre":
-                b[key] = (entry/without_dupl)/int(args.length)
-            else:
-                b[key] = (entry/with_dupl)/int(args.length)
-
-
 def cumulative(dictionary):
     od = OrderedDict(sorted(dictionary.items()))
     x = list(od.values())
@@ -175,28 +165,21 @@ if __name__=="__main__":
         for key, entry in Counter(a).items():
             b[key] = (entry/with_dupl)/int(args.length) #normalisation by length of gene and tree with duplication
 
-    od = OrderedDict(sorted(scaled_syn_1.items()))
-    x = list(od.values())
-    res = np.cumsum(x)
-    cumulative_syn, cumulative_2_syn, cumulative_one_syn = (dict() for i in range(3))
-    for i, j in zip(od.keys(), res): 
-        cumulative_syn[i] = j
 
     cumulative_syn_1, cumulative_syn_2, cumulative_one_syn = cumulative(scaled_syn_1), cumulative(scaled_syn_2), cumulative(scaled_syn_one)
     cumulative_nonsyn_1, cumulative_nonsyn_2, cumulative_one_nonsyn = cumulative(scaled_nonsyn_1), cumulative(scaled_nonsyn_2), cumulative(scaled_nonsyn_one)
 
     #plotting the cumulative distributions
     fig, axs = plt.subplots(1,2)
-    axs[0].step(cumulative_syn.keys(), cumulative_syn.values(), label= f'1st copy postduplication')
-    axs[0].step(cumulative_2_syn.keys(), cumulative_2_syn.values(), label=f'2nd copy postduplication' )
+    axs[0].step(cumulative_syn_1.keys(), cumulative_syn_1.values(), label= f'1st copy postduplication')
+    axs[0].step(cumulative_syn_2.keys(), cumulative_syn_2.values(), label=f'2nd copy postduplication' )
     axs[0].step(cumulative_one_syn.keys(), cumulative_one_syn.values(), label= f'preduplication')
     axs[1].step(cumulative_nonsyn_1.keys(), cumulative_nonsyn_1.values(), label= '1st copy postduplication')
     axs[1].step(cumulative_nonsyn_2.keys(), cumulative_nonsyn_2.values(), label='2nd copy postduplication' )
     axs[1].step(cumulative_one_nonsyn.keys(), cumulative_one_nonsyn.values(), label='preduplication')
-    axs[1].legend(loc='lower center', bbox_to_anchor=(0.5, 1.05),
-          ncol=3, fancybox=True, shadow=True)
+    axs[1].legend(loc='lower left', bbox_to_anchor=(1, 1.05))
     fig.suptitle('Synonymous and non-synonymous Mutations')
-    plt.savefig(args.output)
+    plt.savefig(args.output, bbox_inches="tight")
 
     #KS STATISTIC
 
@@ -204,8 +187,6 @@ if __name__=="__main__":
     #they each show the number of times a mutation occurs at a particular location, e.g. 5, 5, 5, 3, 3, 3, 3, 6, 1, 12, ... etc
     # the part of the workflow below calculates the Kolmogorov-Smirnov Statistics for them
 
-
-    
     dictionary_ = {'Preduplication statistic': [" ", stats.ks_2samp(syn_pre, syn_1),  stats.ks_2samp(syn_pre, syn_2)], 'PostDuplication Copy 1 statistic': [stats.ks_2samp(syn_pre, syn_1), " ", stats.ks_2samp(syn_1, syn_2)], "PostDuplication Copy 2 statistic": [stats.ks_2samp(syn_pre, syn_2), stats.ks_2samp(syn_1, syn_2),  " "]}
     df = pd.DataFrame(dictionary_)
     df.index = ['Preduplication', 'PostDuplication Copy 1', "PostDuplication Copy 2"]
@@ -220,14 +201,14 @@ if __name__=="__main__":
     
     number_of_muts_syn = [len(syn_pre), len(syn_1), len(syn_2)] #number of synonymous mutations in copy of the duplication
     number_of_muts_nonsyn = [len(nonsyn_pre), len(nonsyn_1), len(nonsyn_2)] #number of nonsynonymous mutations in each copy of the duplication
-
+    print("Mutation rate mu synonymous (pre, post 1, post 2):")
     for nr_of_muts in number_of_muts_syn:
         distr =dict()
         for i in np.arange(0.001, 1.001, 0.001):
             poisson = (((i*without_dupl)**(nr_of_muts))*math.exp(-i*without_dupl))/nr_of_muts
             distr[poisson]=i
         print(max(distr, key=distr.get))
-
+    print("Mutation rate mu nonsynonymous (pre, post 1, post 2):")
     for nr_of_muts in number_of_muts_nonsyn:
         distr =dict()
         for i in np.arange(0.001, 1.001, 0.001):
