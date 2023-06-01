@@ -6,10 +6,12 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-def separate_duplications(duplicationfile, lengthofdupl):
+def separate_duplications(lengthofdupl):
+
     """
     Divides sequences from duplication file into preduplication, and postduplication copies 1 and 2
     """
+    duplicationfile = SeqIO.parse(args.input, "fasta")
     preduplication, postduplication_1, postduplication_2 = (defaultdict(list) for i in range(3))
     for entry in duplicationfile:
         if '-' not in entry.seq:
@@ -147,7 +149,7 @@ if __name__=="__main__":
                 break
     without_dupl = total_len-with_dupl
 
-    copy1, copy2, preduplication = separate_duplications(duplication_file, args.length)
+    copy1, copy2, preduplication = separate_duplications(args.length)
     nonsynonymous_1, synonymous_1 = recursive_mutations(tree_file, copy1)
     nonsynonymous_2, synonymous_2 = recursive_mutations(tree_file, copy2)
     nonsynonymous_pre, synonymous_pre = recursive_mutations(tree_file, preduplication)
@@ -223,12 +225,12 @@ if __name__=="__main__":
         distr =dict()
         for i in np.arange(0.001, 1.001, 0.001):
             poisson = (((i*without_dupl)**(nr_of_muts))*math.exp(-i*without_dupl))/nr_of_muts
-            distr[i]=poisson
+            distr[poisson]=i
         print(max(distr, key=distr.get))
 
     for nr_of_muts in number_of_muts_nonsyn:
         distr =dict()
         for i in np.arange(0.001, 1.001, 0.001):
             poisson = (((i*without_dupl)**(nr_of_muts))*math.exp(-i*without_dupl))/nr_of_muts
-            distr[i]=poisson
+            distr[poisson]=i
         print(max(distr, key=distr.get))
