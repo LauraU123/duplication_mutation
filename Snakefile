@@ -118,5 +118,5 @@ rule graphs:
         --tree {input.tree_} \
         --length {params.length} \
         --output {output.graph_cumsum_syn} \
-        --tsv {params.tsv}
+        --tsv {params.tsv} \
         """
