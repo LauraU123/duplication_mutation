@@ -1,8 +1,8 @@
-# duplication_mutation
-Input: Nextstrain workflow outputs (tree, reconstructed root), sequences, long reference (with duplications)
+#Duplication mutation analysis
 
-Output: Graphs showing the evolution of the duplication (preduplication, postduplication copy 1 and 2)
+This workflow analyses the evolution of the  duplication in the RSV G gene.
+It takes as input RSV sequences (fasta format), as well as a root sequence and tree file (nwk).
+
+## Workflow output
 
 
-To run A or B or both, specify in Snakefile. 
-	
