@@ -113,7 +113,7 @@ rule graphs:
         tsv = "results/{a_or_b}/graphs/cumulative_sum_"
     shell:
         """
-        python3 scripts/graphs.py \
+        python3 scripts/reconstruct_and_graph.py \
         --input {input.data} \
         --tree {input.tree_} \
         --length {params.length} \
