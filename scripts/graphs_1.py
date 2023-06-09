@@ -9,6 +9,15 @@ from scipy import stats
 def separate_duplications(lengthofdupl):
     """
     Divides sequences from duplication file into preduplication, and postduplication copies 1 and 2
+    By splitting the files into two parts based on duplication length
+    
+    inputs: length of duplication (72 for RSV-A and 60 for RSV-B)
+            duplication file (fasta file containing aligned duplicated regions)
+    outputs:
+        - preduplication dictionary 
+        - postduplication dictionary (first copy)
+        -postduplication dictionary (second copy)
+    
     """
     duplicationfile = SeqIO.parse(args.input, "fasta")
     preduplication, postduplication_1, postduplication_2 = (defaultdict(list) for i in range(3))
@@ -29,7 +38,15 @@ def separate_duplications(lengthofdupl):
 
 def recursive_mutations(treefile, copy):
     """
-    Makes basic first reconstruction of common mutations moved to common ancestor - refined by function below
+    Makes basic first reconstruction of common mutations moved to common ancestor. 
+    Mutations are split into synonymous and nonsynonymous based on if they result in amino acid change or not. 
+
+    inputs:
+        - open newick tree file (rooted at midpoint)
+        - copy: dictionary of sequences in a copy of the duplication
+    outputs:
+        - dictionary synonymous: rudimentary first reconstruction of the common mutations in the copy in dictionary form (synonymous)
+        - dictionary nonsynonymous: same as above but nonsynonymous
     """
     synonymous_, nonsynonymous_ = (defaultdict(list) for i in range(2))
     for branch in treefile.get_nonterminals(order='postorder'):
@@ -58,7 +75,17 @@ def recursive_mutations(treefile, copy):
 
 def refine_recursive(treefile, synonymous, nonsynonymous):
     """
-    Moves common mutations to common ancestor - up the tree. Returns synonymous and nonsynonymous dictionaries.
+    Refines the common mutation function described above. 
+    Mutations present in multiple branches are moved further up the tree and exceptions due to sequencing errors are taken into account.
+
+    inputs:
+        dictionary synonymous (dictionary of branches and synonymous mutations)
+        dictionary nonsynonymous (same as above but nonsynonymous)
+        read nwk tree file rooted at midpoint, with the relevant branches
+
+    outputs:
+        dictionaries for synonymous and nonsynonymous common mutations.
+    
     """
     for branch in treefile.get_nonterminals(order='postorder'):
         if branch.name in synonymous:
@@ -84,7 +111,14 @@ def refine_recursive(treefile, synonymous, nonsynonymous):
 
 def mutations(synonymous, nonsynonymous):
     """
-    Returns lists of synonymous and nonsynonymous mutation locations in the duplication
+    Returns locations of synonymous and nonsynonymous mutations in list format
+    
+    Inputs:
+        synonymous mutation dictionary
+        nonsynonymous mutation dictionary
+    Outputs:
+        - list of nonsynonymous mut location
+        - list of synonymous mut location
     """
     syn_, nonsyn_, lst_s, lst_n = ([] for i in range(4))
     for i in synonymous.values():
@@ -98,9 +132,15 @@ def mutations(synonymous, nonsynonymous):
         new_numbers_ = list(set(numbers_))
         for j in new_numbers_: lst_n.append(j)
     for item_ in lst_n: nonsyn_.append(int(item_))
+    
     return(nonsyn_, syn_)
 
 def cumulative(dictionary):
+    """
+    Returns cumulative values for each element of an ordered dictionary
+    Input:  
+        dictionary with cumulative values for each ordered key 
+    """
     od = OrderedDict(sorted(dictionary.items()))
     x = list(od.values())
     res = np.cumsum(x)
@@ -181,6 +221,24 @@ if __name__=="__main__":
     fig.suptitle('Synonymous and non-synonymous Mutations')
     plt.savefig(args.output, bbox_inches="tight")
 
+
+    #plotting synonymous and nonsynonymous
+    fig_nonsyn = plt.figure("nonsynonymous duplication")
+    plt.title('Nonsynonymous Mutations')
+    plt.xlabel("Location within the duplication")
+    plt.ylabel("Number of Sequences")
+    plt.hist([nonsyn_1, nonsyn_2, nonsyn_pre],stacked=True,  bins=range(int(args.length)+1), label=['first duplication', 'second duplication', 'preduplication'])
+    plt.legend(loc='upper left')
+    plt.savefig(args.tsv +"nonsynonymous_duplication.png")
+    
+    fig_syn = plt.figure("synonymous duplication")
+    plt.title('Synonymous Mutations')
+    plt.xlabel("Location within the duplication")
+    plt.ylabel("Number of Sequences")
+    plt.hist([syn_1, syn_2, syn_pre],stacked=True,  bins=range(int(args.length)+1), label=['first duplication', 'second duplication', 'preduplication'])
+    plt.legend(loc='upper left')
+    plt.savefig(args.tsv +"synonymous_duplication.png")
+
     #KS STATISTIC
 
     #synone, syn_1 and syn_2 are lists (before normalisation by division by tree branch length and length of duplication)
@@ -201,11 +259,13 @@ if __name__=="__main__":
     
     number_of_muts_syn = [len(syn_pre), len(syn_1), len(syn_2)] #number of synonymous mutations in copy of the duplication
     number_of_muts_nonsyn = [len(nonsyn_pre), len(nonsyn_1), len(nonsyn_2)] #number of nonsynonymous mutations in each copy of the duplication
+
+    
     print("Mutation rate mu synonymous (pre, post 1, post 2):")
     for nr_of_muts in number_of_muts_syn:
         distr =dict()
         for i in np.arange(0.001, 1.001, 0.001):
-            poisson = (((i*without_dupl)**(nr_of_muts))*math.exp(-i*without_dupl))/nr_of_muts
+            poisson = (((i*without_dupl)**(nr_of_muts))*math.exp(-i*without_dupl))/nr_of_muts #(factorial)
             distr[poisson]=i
         print(max(distr, key=distr.get))
     print("Mutation rate mu nonsynonymous (pre, post 1, post 2):")
@@ -215,3 +275,25 @@ if __name__=="__main__":
             poisson = (((i*without_dupl)**(nr_of_muts))*math.exp(-i*without_dupl))/nr_of_muts
             distr[poisson]=i
         print(max(distr, key=distr.get))
+        print(nr_of_muts/without_dupl)
+    
+    mu_pre_syn = len(syn_pre)/without_dupl
+    mu_pre_nonsyn = len(nonsyn_pre)/without_dupl
+    mu_1_syn = len(syn_1)/with_dupl
+    mu_1_nonsyn = len(nonsyn_1)/with_dupl
+    mu_2_syn = len(syn_2)/with_dupl
+    mu_nonsyn_2 = len(nonsyn_2)/with_dupl
+
+    poisson_dataframe = pd.DataFrame({"synonymous preduplication": mu_pre_syn, "synonymous posduplication 1": mu_1_syn, 
+                                      "synonymous posduplication 2": mu_2_syn, "nonsynonymous preduplication": mu_pre_nonsyn,
+                                        "nonsynonymous posduplication 1": mu_1_nonsyn, "nonsynonymous posduplication 2": mu_nonsyn_2}, index=[0])
+    
+    poisson_dataframe.to_csv(args.tsv + "_mutation rate.csv")
+
+
+
+
+#maximise log of probability
+#poisson: scipy (logs etc)
+#maximum vertical distance between the cumulative distributions (same or not)
+#can't reject hyp.
