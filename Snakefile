@@ -8,6 +8,8 @@ rule all:
         expand("results/{a_or_b}/graphs/cumulative_sum_syn.png", a_or_b=A_OR_B)
 
 rule branch_from_root:
+    message:
+        """Adding mutations to root sequence to reconstruct all branches"""
     input:
         root = "data/rsv_{a_or_b}_root_sequence.json",
         sequences = "data/{a_or_b}_sequences.fasta",
@@ -26,6 +28,8 @@ rule branch_from_root:
         """
 
 rule align_to_ref:
+    message:
+        """Aligning reconstructed branches and tips pairwise"""
     input:
         reconstructed_seq = rules.branch_from_root.output.reconstructed_seq,
         reference = "config/{a_or_b}reference.fasta"
@@ -40,6 +44,8 @@ rule align_to_ref:
         """
 
 rule just_duplication:
+    message:
+        """Extracting duplication from alignment based on given parameters"""
     input:
         reconstructed_seq = rules.align_to_ref.output.aligned
     params:
@@ -57,9 +63,10 @@ rule just_duplication:
         """
 
 rule align_G:
+    message:
+        """Aligning duplications - MSA"""
     input:
-        only_dupl = rules.just_duplication.output.only_dupl,
-        reference = rules.align_to_ref.input.reference
+        only_dupl = rules.just_duplication.output.only_dupl
     output:
         aligned_dupl = "results/{a_or_b}/aligned_duplication.fasta"
     shell:

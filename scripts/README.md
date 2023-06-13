@@ -3,7 +3,7 @@
 To reconstruct the mutations in the G gene, a series of steps are needed.
 This includes reconstructing all branches in the tree, followed by finding all
 
-1. Reconstructing from root
+1.**Reconstructing from root**
 
 The first step of the workflow includes reconstructing all of the branch sequences
 from the input tree file.
@@ -19,7 +19,7 @@ Output:
 	- fasta file of all reconstructed branches and terminal sequences
 	
 
-2. Pairwise alignment to reference
+2. **Pairwise alignment to reference**
 
 All the reconstructed sequences are aligned to each other.
 
@@ -30,7 +30,7 @@ Output:
 	- pairwise aligned sequences
 	
 
-3. Cut out duplication
+3. **Cut out duplication**
 
 The G duplication is cut out of the alignment. The indices must be manually provided.
 
@@ -42,7 +42,7 @@ Output:
 	- fasta file containing only the relevant part of the alignment
 
 
-4. Alignment of the duplication
+4. **Alignment of the duplication**
 
 The cut out G duplicated sequences are Multiple Sequence Aligned to each other
 
