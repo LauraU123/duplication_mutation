@@ -11,12 +11,16 @@ It accomplishes this by recursively adding mutations on each branch to the root 
 Terminal sequences are copied from an input fasta file. 
 
 Inputs:
-	* root sequence
-	* tree file (with mutation annotations for each branch)
-	* terminal sequences (fasta)
+
+* root sequence
+
+* tree file (with mutation annotations for each branch)
+
+* terminal sequences (fasta)
 	
 Output:
-	* fasta file of all reconstructed branches and terminal sequences
+
+* fasta file of all reconstructed branches and terminal sequences
 	
 
 2. **Pairwise alignment to reference**
@@ -24,10 +28,14 @@ Output:
 All the reconstructed sequences are aligned to each other.
 
 Input:
-	* reference fasta (a or b)
-	* all reconstructed branches and terminal sequences (Step 1. output)
+
+* reference fasta (a or b)
+
+* all reconstructed branches and terminal sequences (Step 1. output)
+
 Output:
-	* pairwise aligned sequences
+
+* pairwise aligned sequences
 	
 
 3. **Cut out duplication**
@@ -35,11 +43,15 @@ Output:
 The G duplication is cut out of the alignment. The indices must be manually provided.
 
 Input:
-	* pairwise aligned branches and sequences
+
+* pairwise aligned branches and sequences
 Params:
-	* duplication locations (start, end)
+
+* duplication locations (start, end)
+
 Output:
-	* fasta file containing only the relevant part of the alignment
+
+* fasta file containing only the relevant part of the alignment
 
 
 4. **Alignment of the duplication**
@@ -47,9 +59,12 @@ Output:
 The cut out G duplicated sequences are Multiple Sequence Aligned to each other
 
 Input:
-	* duplicated G region
+
+* duplicated G region
+
 Output:
-	* MSA duplicated G region
+
+* MSA duplicated G region
 
 5. **Reconstructing the Duplication - Initial step**
 
@@ -63,9 +78,12 @@ This step of the workflow takes the output of the previous step and reconstructs
 by checking the most common nucleotide at that position downstream of them. 
 
 Input:
-	* partially reconstructed duplication file with X at unknown mutations
+
+* partially reconstructed duplication file with X at unknown mutations
+
 Output:
-	* fully reconstructed duplication file with no X
+
+* fully reconstructed duplication file with no X
 	
 7. **Graphs and Statistics**
 
@@ -73,11 +91,16 @@ The last step of the workflow constructs graphs of cumulative distributions for 
 as well as calculating the KS statistic and mutation rate.
 
 Input:
-	* duplication length
-	* reconstructed duplication file
+
+* duplication length
+
+* reconstructed duplication file
 Output:
-	* cumulative distribution graphs
-	* mutation at each location graph (synonymous and nonsynonymous)
-	* statistics (KS test and mutation rate csv files)
+
+* cumulative distribution graphs
+
+* mutation at each location graph (synonymous and nonsynonymous)
+
+* statistics (KS test and mutation rate csv files)
 	
 	
