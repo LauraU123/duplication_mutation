@@ -50,3 +50,34 @@ Input:
 	- duplicated G region
 Output:
 	- MSA duplicated G region
+
+5. **Reconstructing the Duplication - Initial step**
+
+This part of the workflow moves insertions in the duplication from the tip sequences up the tree recursively.
+When mutations occur, the most common nucleotide in the daughter branches is moved up the tree.
+If there is no most frequent nucleotide, an X is added instead.
+
+6. **Reconstructing the Duplication - Removing X**
+
+This step of the workflow takes the output of the previous step and reconstructs the sequences with X, 
+by checking the most common nucleotide at that position downstream of them. 
+
+Input:
+	- partially reconstructed duplication file with X at unknown mutations
+Output:
+	- fully reconstructed duplication file with no X
+	
+7. **Graphs and Statistics**
+
+The last step of the workflow constructs graphs of cumulative distributions for the mutations in each duplication,
+as well as calculating the KS statistic and mutation rate.
+
+Input:
+	- duplication length
+	- reconstructed duplication file
+Output:
+	-cumulative distribution graphs
+	- mutation at each location graph (synonymous and nonsynonymous)
+	- statistics (KS test and mutation rate csv files)
+	
+	
