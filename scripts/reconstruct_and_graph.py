@@ -204,22 +204,28 @@ if __name__=="__main__":
     for a, b in zip(post_dupl, post_dupl_dicts):
         for key, entry in Counter(a).items():
             b[key] = (entry/with_dupl)/int(args.length) #normalisation by length of gene and tree with duplication
+    
+    #print(scaled_syn_1)
+    #print(scaled_syn_2)
 
 
     cumulative_syn_1, cumulative_syn_2, cumulative_one_syn = cumulative(scaled_syn_1), cumulative(scaled_syn_2), cumulative(scaled_syn_one)
     cumulative_nonsyn_1, cumulative_nonsyn_2, cumulative_one_nonsyn = cumulative(scaled_nonsyn_1), cumulative(scaled_nonsyn_2), cumulative(scaled_nonsyn_one)
 
+    print(cumulative_syn_1, cumulative_syn_2)
     #plotting the cumulative distributions
     fig, axs = plt.subplots(1,2)
-    axs[0].step(cumulative_syn_1.keys(), cumulative_syn_1.values(), label= f'1st copy postduplication')
-    axs[0].step(cumulative_syn_2.keys(), cumulative_syn_2.values(), label=f'2nd copy postduplication' )
-    axs[0].step(cumulative_one_syn.keys(), cumulative_one_syn.values(), label= f'preduplication')
-    axs[1].step(cumulative_nonsyn_1.keys(), cumulative_nonsyn_1.values(), label= '1st copy postduplication')
-    axs[1].step(cumulative_nonsyn_2.keys(), cumulative_nonsyn_2.values(), label='2nd copy postduplication' )
-    axs[1].step(cumulative_one_nonsyn.keys(), cumulative_one_nonsyn.values(), label='preduplication')
+    axs[0].step(cumulative_syn_1.keys(), cumulative_syn_1.values(), label= f'1st copy postduplication', where='post')
+    axs[0].step(cumulative_syn_2.keys(), cumulative_syn_2.values(), label=f'2nd copy postduplication', where='post' )
+    axs[0].step(cumulative_one_syn.keys(), cumulative_one_syn.values(), label= f'preduplication', where='post' )
+    axs[1].step(cumulative_nonsyn_1.keys(), cumulative_nonsyn_1.values(), label= '1st copy postduplication', where='post' )
+    axs[1].step(cumulative_nonsyn_2.keys(), cumulative_nonsyn_2.values(), label='2nd copy postduplication', where='post'  )
+    axs[1].step(cumulative_one_nonsyn.keys(), cumulative_one_nonsyn.values(), label='preduplication', where='post' )
     axs[1].legend(loc='lower left', bbox_to_anchor=(1, 1.05))
     fig.suptitle('Synonymous and non-synonymous Mutations')
     plt.savefig(args.output, bbox_inches="tight")
+
+
 
 
     #plotting synonymous and nonsynonymous
@@ -260,7 +266,7 @@ if __name__=="__main__":
     number_of_muts_syn = [len(syn_pre), len(syn_1), len(syn_2)] #number of synonymous mutations in copy of the duplication
     number_of_muts_nonsyn = [len(nonsyn_pre), len(nonsyn_1), len(nonsyn_2)] #number of nonsynonymous mutations in each copy of the duplication
 
-    
+    """
     print("Mutation rate mu synonymous (pre, post 1, post 2):")
     for nr_of_muts in number_of_muts_syn:
         distr =dict()
@@ -276,16 +282,33 @@ if __name__=="__main__":
             distr[poisson]=i
         print(max(distr, key=distr.get))
         print(nr_of_muts/without_dupl)
+    """
     
     mu_pre_syn = len(syn_pre)/without_dupl
-    mu_pre_nonsyn = len(nonsyn_pre)/without_dupl
-    mu_1_syn = len(syn_1)/with_dupl
-    mu_1_nonsyn = len(nonsyn_1)/with_dupl
-    mu_2_syn = len(syn_2)/with_dupl
-    mu_nonsyn_2 = len(nonsyn_2)/with_dupl
+    mu_pre_syn_error = math.sqrt(len(syn_pre))/without_dupl
 
-    poisson_dataframe = pd.DataFrame({"synonymous preduplication": mu_pre_syn, "synonymous posduplication 1": mu_1_syn, 
-                                      "synonymous posduplication 2": mu_2_syn, "nonsynonymous preduplication": mu_pre_nonsyn,
-                                        "nonsynonymous posduplication 1": mu_1_nonsyn, "nonsynonymous posduplication 2": mu_nonsyn_2}, index=[0])
+    mu_pre_nonsyn = len(nonsyn_pre)/without_dupl
+    mu_pre_nonsyn_error = math.sqrt(len(nonsyn_pre))/without_dupl
+
+    mu_1_syn = len(syn_1)/with_dupl
+    mu_1_syn_error = math.sqrt(len(syn_1))/with_dupl
+
+    mu_1_nonsyn = len(nonsyn_1)/with_dupl
+    mu_1_nonsyn_error = math.sqrt(len(nonsyn_1))/with_dupl
+
+    mu_2_syn = len(syn_2)/with_dupl
+    mu_2_syn_error = math.sqrt(len(syn_2))/with_dupl
+
+    mu_nonsyn_2 = len(nonsyn_2)/with_dupl
+    mu_2_nonsyn_error =  math.sqrt(len(nonsyn_2))/with_dupl
+
+
+
+    poisson_dataframe = pd.DataFrame({"synonymous preduplication": mu_pre_syn, "synonymous preduplication error": mu_pre_syn_error, "synonymous posduplication 1": mu_1_syn, 
+                                      "synonymous postduplication 1 error": mu_1_syn_error,
+                                      "synonymous posduplication 2": mu_2_syn, "synonymous postduplication 2 error" : mu_2_syn_error,  "nonsynonymous preduplication": mu_pre_nonsyn,
+                                      "nonsynonymous preduplication error" : mu_pre_nonsyn_error, 
+                                        "nonsynonymous posduplication 1": mu_1_nonsyn,  "nonsynonymous postduplication 1 error": mu_1_nonsyn_error,
+                                        "nonsynonymous posduplication 2": mu_nonsyn_2, "nonsynonymous postduplication 2 error": mu_2_nonsyn_error}, index=[0])
     
-    poisson_dataframe.to_csv(args.tsv + "_mutation rate.csv")
+    poisson_dataframe.to_csv(args.tsv + "_mutation rate.tsv", sep='\t')

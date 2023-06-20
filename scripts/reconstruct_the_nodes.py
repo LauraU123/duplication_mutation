@@ -4,47 +4,61 @@ from collections import Counter, defaultdict
 import pandas as pd
 
 def reconstruct_insertions_(fasta, tree, output):
+    """Since insertions are not included in the branches, as they are not included in the input annotated tree,
+    It is necessary to reconstruct them from the terminal branches.
+    
+    Input: fasta file of the reconstructed aligned branches 
+
+    
+    """
     tree_ = Phylo.read(tree, "newick")
     f = SeqIO.parse(fasta, "fasta")
     tree_.root_at_midpoint()
     tree_.find_clades()
+
     mut_dict = defaultdict(list)
     seq_dict = dict()
     all_branch_seq = []
+
     for record in f:
         seq_dict[record.id] = record.seq
+    #writing all the records to their seq in dictionary
 
     for branch in tree_.get_nonterminals(order='postorder'):
         if pd.isna(branch.name) == False:
-            print(branch)
+            #checking if the branch has a duplication or not
             if '-'*int(int(args.length)/2) in seq_dict[branch.name]:
                 substring = '-'*int(int(args.length)/2)
-                location = (seq_dict[branch.name].find(substring))
+                location = seq_dict[branch.name].find(substring)
                 all_branch_seq = [] 
                 for b in branch:
                     if '-' not in seq_dict[b.name]:
-                        all_branch_seq.append(str(seq_dict[b.name][location:location+int(int(args.length)/2)]))
+                        #if there are no gaps in the branch, the relevant sequence is added to the list
+                        sequence_in_branch = str(seq_dict[b.name][location:location+int(int(args.length)/2)])
+                        all_branch_seq.append(sequence_in_branch)
 
             if len(all_branch_seq) >= 3:
                 common_str = ""
                 mutations = []
                 for i in range(0, len(all_branch_seq[0])):
                     nuc_at_pos = ""
-                    for a in range(0, len(all_branch_seq)): 
-                        nuc_at_pos+= f'{all_branch_seq[a][i]}'
+                    for a in range(0, len(all_branch_seq)): nuc_at_pos+= f'{all_branch_seq[a][i]}'
                     count = Counter(nuc_at_pos)
 
                     if len(count)>1:
+                        # if there is a mutation, most commo character is moved recursively up the tree.
                         most_common_char = Counter(nuc_at_pos).most_common(1)[0][0]
                         common_str+=most_common_char
                         mutations.append(f'{most_common_char}{nuc_at_pos.replace(most_common_char, "")}{location+i}')
                     else:
                         mutations.append(f'{Counter(nuc_at_pos).most_common(1)[0][0]}{Counter(nuc_at_pos).most_common(1)[0][0]}{Counter(nuc_at_pos).most_common(1)[0][0]}{location+i}') 
                         common_str+= nuc_at_pos[0]
+
                 seq_dict[branch.name] =seq_dict[branch.name].replace(substring, common_str)
                 mut_dict[branch.name].extend(mutations)
                         
             if len(all_branch_seq) == 2:
+                #if branches are of equal length, X is added to the duplication
                 common_str = ""
                 mutations = []
                 for i in range(0, len(all_branch_seq[0])):
@@ -59,20 +73,23 @@ def reconstruct_insertions_(fasta, tree, output):
                 seq_dict[branch.name]= seq_dict[branch.name].replace(substring, common_str)
                 mut_dict[branch.name].extend(mutations)
 
-    new_file = []
+    intermediate_file = []
     for i, j in seq_dict.items():
         entry = SeqRecord.SeqRecord(Seq.Seq(j), id=i)
-        new_file.append(entry)
-    SeqIO.write(new_file, output, "fasta")
+        intermediate_file.append(entry)
+    SeqIO.write(intermediate_file, output, "fasta")
     return(mut_dict)
 
 def checkList(lst):
+    """this function checks if all elements of a list are equal"""
     if len(lst) < 0:
-        res = True
-    res = all(ele == lst[0] for ele in lst)
-    if(res): return('equal')
+        val = True
+    val = all(ele == lst[0] for ele in lst)
+    if(val): return('equal')
 
 def most_frequent(string):
+    """finding most frequent character in a string. If most common character is not a nucleotide, but an X,
+    the second most common character is returned"""
     c = Counter(string)
     most_frequent_ = c.most_common(1)[0]
     if most_frequent_[0] not in 'ACGT':

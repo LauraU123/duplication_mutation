@@ -5,11 +5,9 @@ import pandas as pd
 
 
 
-def find(s, ch):
-    return [i for i, ltr in enumerate(s) if ltr == ch]
-
-
-
+def find(string, character):
+    """this function returns the location of a given character in a string"""
+    return [i for i, ltr in enumerate(string) if ltr == character]
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(
@@ -21,8 +19,6 @@ if __name__=="__main__":
     parser.add_argument('--input', type=str, help="input fasta file")
     args = parser.parse_args()
 
-
-
     tree_ = Phylo.read(args.tree, "newick")
     f = SeqIO.parse(args.input, "fasta")
     seq_dict = dict()
@@ -30,35 +26,45 @@ if __name__=="__main__":
     for record in f:
         seq_dict[record.id] = record.seq
         if "X" not in record.seq:
+            #if no X is in the sequence, the sequence is automatically added to the updated file
             update_file.append(record)
+
     for branch in tree_.get_nonterminals(order='postorder'):
         all_branch_seq = []
         if pd.isna(branch.name) == False:
             if branch.name in seq_dict:
                 if 'X' in seq_dict[branch.name]:
-                    indices_of_interest = (find(seq_dict[branch.name], 'X'))
+                    indices_of_interest = find(seq_dict[branch.name], 'X')
                     branch_names = []
                     for b in branch:
                         if b.is_terminal() == False:
                             branch_names.append(b)
+
                     if len(branch_names) == 1:
                         for ind in indices_of_interest:
                             if (seq_dict[branch_names[0].name][ind]) != 'X':
+                                #if the daughter branches do not have an X, replace the X with the relevant character 
                                 seq_dict[branch.name] = seq_dict[branch.name][:ind] + seq_dict[branch_names[0].name][ind]+ seq_dict[branch.name][ind+1:]
                             else:
+                                #if daughter branches have X, append all characters at that location to a lst and find most common one
                                 which_one = [seq_dict[branch_names[0].get_terminals()[0].name][ind], seq_dict[branch_names[0].get_terminals()[1].name][ind]]
                                 for b in branch:
                                     if b.is_terminal() == True:
                                         which_one.append(seq_dict[b.name][ind])
-                                new_letter = (max(Counter(which_one).keys()))
+                                new_letter = max(Counter(which_one).keys())
                                 seq_dict[branch.name] = seq_dict[branch.name][:ind] + new_letter + seq_dict[branch.name][ind+1:]
                         new_entry = SeqRecord.SeqRecord(Seq.Seq(seq_dict[branch.name]), id=branch.name, description=branch.name)
                     all_term = dict()
+
                     if len(branch_names) > 1:
+                        #if all branches in the branch are not terminal, find their terminals and extract most common character at given location
                         for i in range(0, len(branch_names)):
                             all_term[branch_names[i].name]= len(branch_names[i].get_terminals())
                         for ind in indices_of_interest:
                             seq_dict[branch.name] = seq_dict[branch.name][:ind] + seq_dict[max(all_term)][ind]+ seq_dict[branch.name][ind+1:]
                         new_entry = SeqRecord.SeqRecord(Seq.Seq(seq_dict[branch.name]), id=branch.name, description=branch.name)
                     update_file.append(new_entry)
+
+
+
     SeqIO.write(update_file, args.output, 'fasta')
