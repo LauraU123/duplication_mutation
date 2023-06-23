@@ -32,9 +32,11 @@ def separate_duplications(lengthofdupl):
         else:
             preduplication_ = entry.seq.replace("-", "")
             if len(preduplication_)== int(lengthofdupl):
-                for i in range(0, len(entry.seq[1:-2]), 3):
+                preduplication_ = preduplication_[1:-2]
+                for i in range(0, len(preduplication_), 3):
                     preduplication[entry.id].append(preduplication_[i:i+3])
     return(postduplication_1, postduplication_2, preduplication)
+
 
 def recursive_mutations(treefile, copy):
     """
@@ -205,8 +207,9 @@ if __name__=="__main__":
         for key, entry in Counter(a).items():
             b[key] = (entry/with_dupl)/int(args.length) #normalisation by length of gene and tree with duplication
     
-    #print(scaled_syn_1)
-    #print(scaled_syn_2)
+    print(syn_pre)
+    print(syn_1)
+    print(syn_2)
 
 
     cumulative_syn_1, cumulative_syn_2, cumulative_one_syn = cumulative(scaled_syn_1), cumulative(scaled_syn_2), cumulative(scaled_syn_one)
